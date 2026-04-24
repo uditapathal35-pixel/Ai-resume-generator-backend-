@@ -1,6 +1,6 @@
 import os
 from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
+from website.models import db
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
@@ -12,29 +12,11 @@ CORS(app, resources={r"/*": {"origins": ["http://localhost:3001", "http://127.0.
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-only-secret-change-me-in-production')
+db.init_app(app)
 
 _serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 _TOKEN_SALT = 'user-auth-token'
 _TOKEN_MAX_AGE = 60 * 60 * 24 * 7  # 7 days
-
-db = SQLAlchemy(app)
-
-# 🔹 User Model
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(150), unique=True)
-    password = db.Column(db.String(256))  # hashed passwords are longer
-
-# 🔹 Resume Model
-class Resume(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.Text)
-
-
-# 🔹 Create database
-with app.app_context():
-    db.create_all()
-
 
 @app.route('/')
 def index():
